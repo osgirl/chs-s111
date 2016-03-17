@@ -6,11 +6,17 @@ import h5py
 import numpy
 import iso8601
 import pytz
-from s111 import ascii_time_series
+from chs_s111 import ascii_time_series
 
 
 #******************************************************************************
 def update_area_coverage(hdf_file, latitude, longitude):
+    """Update the geographic extents of the S-111 file.
+    
+    :param hdf_file: The S-111 HDF file.
+    :param latitude: The new y coordinate.
+    :param longitude: The new x coordinate.
+    """
 
     if 'westBoundLongitude' in hdf_file.attrs:
         westBoundLongitude = hdf_file.attrs['westBoundLongitude']
@@ -44,6 +50,12 @@ def update_area_coverage(hdf_file, latitude, longitude):
 
 #******************************************************************************
 def update_temporal_coverage(hdf_file, start_time, end_time):
+    """Update the temporal extents of the S-111 file.
+    
+    :param hdf_file: The S-111 HDF file.
+    :param start_time: The new start time.
+    :param time_file: The new end time.
+    """
 
     if 'dateTimeOfFirstRecord' in hdf_file.attrs:
         dateTimeOfFirstRecord = iso8601.parse_date(hdf_file.attrs['dateTimeOfFirstRecord'].decode())
@@ -68,7 +80,13 @@ def update_temporal_coverage(hdf_file, start_time, end_time):
 
 #******************************************************************************
 def add_series_group(hdf_file, time_file):
+    """Add a new timeseries group to the given S-111 HDF file.
     
+    :param hdf_file: The S-111 HDF file.
+    :param time_file: The input ASCII file containing the timeseries data.
+    :returns: The newly created group.
+    """
+
     #Read the file metadata to find out how many time stations we currently have.
     numCurrentStations = hdf_file.attrs['numberOfStations']
     
@@ -154,27 +172,36 @@ def add_series_group(hdf_file, time_file):
 
 
 #******************************************************************************    
-def add_series_datasets(group, ascii_file):
-        
+def add_series_datasets(group, time_file):
+    """Add the timeseries data to the specified HDF group.
+    
+    :param group: The HDF group to add the speed and direction datasets to.
+    :param time_file: The input ASCII file containing the timeseries data.
+    """
+
     #Create a new dataset.
-    directions = group.create_dataset('Direction', (1, ascii_file.number_of_records), dtype=numpy.float64)
-    speeds = group.create_dataset('Speed', (1, ascii_file.number_of_records), dtype=numpy.float64)
+    directions = group.create_dataset('Direction', (1, time_file.number_of_records), dtype=numpy.float64)
+    speeds = group.create_dataset('Speed', (1, time_file.number_of_records), dtype=numpy.float64)
 
     print("Adding direction and speed information...")
 
     #For each row of data in the ascii file...
-    for row_counter in range(0, ascii_file.number_of_records):
+    for row_counter in range(0, time_file.number_of_records):
 
         #Read the data from the ascii file and store it in the HDF5 dataset.
-        data_values = ascii_file.read_next_row()
+        data_values = time_file.read_next_row()
         directions[0][row_counter] = data_values[1]
         speeds[0][row_counter] = data_values[2]
     
 
 #******************************************************************************        
 def create_command_line():
+    """Create and initialize the command line parser.
+    
+    :returns: The command line parser.
+    """
 
-    parser = argparse.ArgumentParser(description='Add S-111 time series Dataset')
+    parser = argparse.ArgumentParser(description='Add S-111 time series dataset')
 
     parser.add_argument('-t', '--time-series-file', help='The ASCII file containing the time series.', required=True)
     parser.add_argument("inOutFile", nargs=1)
@@ -207,4 +234,6 @@ def main():
     #We are done, so lets close the file.
     hdf_file.close()
 
-main()
+
+if __name__ == "__main__":
+    main()

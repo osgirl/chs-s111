@@ -32,76 +32,98 @@ class AsciiTimeSeries:
 
     #******************************************************************************        
     def read_header(self):
+        """Read the header of the time series file."""
 
-        rowCounter = 0
-
-        while True:
-
-            rowCounter += 1
-
-            #Grab the current file location.
-            currentLocation = self.ascii_file.tell()
+        #The header contains 24 rows, so read them all.
+        for rowIndex in range(0, 24):
 
             #Read a line of data
-            data = self.ascii_file.readline().strip()
-
-            #If this line does not end with a '||', then we must have hit the beginning of the real data.
-            if data.endswith('||') == False:
-                self.ascii_file.seek(currentLocation)
-                break
+            data = self.ascii_file.readline()
 
             #If this is the 1st row, then lets decode the start date and time.
-            if rowCounter == 1:
+            if rowIndex == 0:
                 
-                components = data[:-2].split()
+                #66-66  1 : Units of depth  [m: metres, f: feet]
+                self.unit = data[65:66]
 
-                dateIndex = len(components) - 1
-                
-                #TODO - find out what format the time is stored... so we can parse it too.
-                #timeIndex = dateIndex - 1
-
-                self.startTime = datetime.strptime(components[dateIndex], '%Y/%m/%d')
-
-                #We assume that this is UTC time.
-                self.startTime = self.startTime.replace(tzinfo=pytz.utc)
+                #68-71  4 : Date (Year) of first data record
+                year = data[67:71]
+                #73-74  2 : Date (Month) of first data record
+                month = data[72:74]
+                #76-77  2 : Date (Day) of first data record
+                day = data[75:77]
 
             #If this is the 2nd row, then lets decode the x and y positions.
-            elif rowCounter == 2:
+            elif rowIndex == 1:
 
-                components = data.split()
+                #14-15  2 : Latitude (Degrees)
+                latDeg = data[13:15]
+                #17-23  7 : Latitude (Minutes up to 4 places of decimal)
+                latMin = data[16:23]
 
-                if len(components) < 7:
-                    raise Exception('Unable to decode position information from header.')
+                self.latitude = float(latDeg) + (float(latMin) * 0.01);
 
-                self.latitude = float(components[1]) + (float(components[2]) * 0.01);
-                if components[3] == 'S':
+                #24-24  1 : 'N' or 'S'
+                if data[23:24] == 'S':
                     self.latitude *= -1.0
 
-                self.longitude = float(components[4]) + (float(components[5]) * 0.01);
-                if components[6] == 'W':
+                #26-28  3 Longitude (Degrees)
+                lonDeg = data[25:28]
+                #30-36  7 : Longitude (Minutes up to 4 places of decimal)
+                lonMin = data[29:36]
+
+                self.longitude = float(lonDeg) + (float(lonMin) * 0.01);
+
+                #37-37  1 : 'W' or 'E'
+                if data[36:37] == 'W':
                     self.longitude *= -1.0
+
+
+                #62-66  5 : Time Zone [# of hours to add to determine UTC, always include + or - and 
+                #           always left justify, (leaves space for Nfld. time). i.e. +03.5]
+                utcOffset = data[61:66]
+
+                #68-69  2 : Time (Hour)   of first data record
+                hour = data[67:69]
+                #70-71  2 : Time (Minute) of first data record
+                minute = data[69:71]
+                #73-74  2 : Time (Second) of first data record
+                seconds = data[72:74]
                 
+                #We now have enought information to construct our timestamp.
+                timeNotInUTC = datetime(year = int(year), month = int(month), day = int(day),
+                                                  hour = int(hour), minute = int(minute), second = int(seconds),  tzinfo = pytz.utc)
+                                
+                deltaToUTC = timedelta(hours = float(utcOffset))
+
+                #Store the start time as UTC.
+                self.startTime = timeNotInUTC + deltaToUTC
+
             #If this is the 3rd row, then lets decode the number of records in the file.
-            elif rowCounter == 3:
+            elif rowIndex == 2:
                 
-                components = data.split()
+                #col 01-10 10 : Number of Records to follow header
+                self.number_of_records = int(data[0:10])
 
-                if len(components) < 6:
-                    raise Exception('Unable to decode count information from header.')
+                #68-69  2 : Sampling interval (Hours)
+                sampleHours = data[67:69]
+                #70-71  2 : Sampling interval (Minutes)
+                sampleMinutes = data[69:71]
+                #73-74  2 : Sampling interval (Seconds)
+                sampleSeconds = data[72:74]
 
-                self.number_of_records = int(components[0])
+                self.interval = timedelta(hours = int(sampleHours), minutes = int(sampleMinutes), seconds = int(sampleSeconds))
 
-                decodedTime = datetime.strptime(components[4], '%H%M:%S')
-                self.interval = timedelta(hours = decodedTime.hour, minutes = decodedTime.minute,
-                                          seconds = decodedTime.second, microseconds = decodedTime.microsecond)
-
-
-        #With the start time, number of records, and interval... we can figure out the end time.
-        self.endTime = self.startTime + (self.number_of_records - 1) * self.interval
+                #With the start time, number of records, and interval... we can figure out the end time.
+                self.endTime = self.startTime + (self.number_of_records - 1) * self.interval
 
 
     #******************************************************************************
     def done(self):
+        """Determine if we have read all records in the time series file.
+
+        :returns: true if all records have been read, else false.
+        """
 
         if self.current_record < self.number_of_records:
             return False
@@ -111,6 +133,10 @@ class AsciiTimeSeries:
 
     #******************************************************************************
     def read_next_row(self):
+        """Read the next row of data from the time series file.
+
+        :returns: A tuple containing the date, direction, and speed.
+        """
 
         #If we are done... throw an error.
         if self.done():

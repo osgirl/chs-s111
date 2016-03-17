@@ -24,7 +24,7 @@ setup(
     license='MIT',
     packages=find_packages(),
     scripts=s111_scripts,
-    install_requires=['pytz', 'iso8601', 'numpy', 'h5py'],
+    install_requires=['pytz', 'iso8601', 'numpy', 'h5py', 'netcdf4'],
     classifiers=[
                    "Development Status :: 2 - Pre-Alpha",
                    "Environment :: Console",        
