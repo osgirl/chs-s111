@@ -8,7 +8,7 @@ from os import listdir
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
     
 s111_scripts = ["scripts/" + item for item in listdir("scripts")]
@@ -18,7 +18,7 @@ setup(
     version='1.0.0.dev1', 
     description='CHS S-111 tools',   
     long_description=long_description,    
-    url='https://github.com/caris/chs_s111',
+    url='https://github.com/caris/chs-s111',
     author='CARIS',
     author_email='github@caris.com',
     license='MIT',
