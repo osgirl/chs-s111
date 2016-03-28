@@ -1,1 +1,1 @@
-# chs-s111
+This Python package contains scripts for creating CHS S-111 datasets.
