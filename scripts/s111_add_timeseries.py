@@ -149,7 +149,7 @@ def add_series_group(hdf_file, time_file):
     update_area_coverage(hdf_file, time_file.latitude, time_file.longitude)
 
     #Update the temporal information.
-    update_temporal_coverage(hdf_file, time_file.startTime, time_file.endTime)
+    update_temporal_coverage(hdf_file, time_file.start_time, time_file.end_time)
 
     #Increment the number of time stations and store it back in the file.
     numCurrentStations += 1
@@ -163,7 +163,7 @@ def add_series_group(hdf_file, time_file):
     newGroup.attrs.create('Title', b'Station No. 1')
 
     #Store the start time.
-    strVal = time_file.startTime.strftime("%Y%m%dT%H%M%SZ")
+    strVal = time_file.start_time.strftime("%Y%m%dT%H%M%SZ")
     newGroup.attrs.create('DateTime', strVal.encode())
 
     print("Created tide station group #", str(numCurrentStations))

@@ -8,20 +8,20 @@ import pytz
 #******************************************************************************
 class AsciiTimeSeries:
     
-    file_name = None
-    ascii_file = None
-    number_of_records = 0
-    current_record = 0
-    latitude = 0
-    longitude = 0
-    interval = None
-    startTime = None
-    endTime = None
-
 
     #******************************************************************************
     def __init__(self, file_name):
         self.file_name = file_name
+
+        self.file_name = None
+        self.ascii_file = None
+        self.interval = None
+        self.start_time = None
+        self.end_time = None
+        self.number_of_records = 0
+        self.current_record = 0
+        self.latitude = 0
+        self.longitude = 0
         
         #Open the file.
         self.ascii_file = open(self.file_name, 'r')
@@ -97,7 +97,7 @@ class AsciiTimeSeries:
                 deltaToUTC = timedelta(hours = float(utcOffset))
 
                 #Store the start time as UTC.
-                self.startTime = timeNotInUTC + deltaToUTC
+                self.start_time = timeNotInUTC + deltaToUTC
 
             #If this is the 3rd row, then lets decode the number of records in the file.
             elif rowIndex == 2:
@@ -115,7 +115,7 @@ class AsciiTimeSeries:
                 self.interval = timedelta(hours = int(sampleHours), minutes = int(sampleMinutes), seconds = int(sampleSeconds))
 
                 #With the start time, number of records, and interval... we can figure out the end time.
-                self.endTime = self.startTime + (self.number_of_records - 1) * self.interval
+                self.end_time = self.start_time + (self.number_of_records - 1) * self.interval
 
 
     #******************************************************************************
