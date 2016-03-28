@@ -7,6 +7,11 @@ import numpy
 import csv
 
 def clear_metadata_value(attributes, attribute_name):
+    """ Clear the specified attribute value.
+
+    :param attributes: The list of attributes containing the value to be cleared.
+    :param attribute_name: The name of the attribute to be cleared.
+    """
 
     if attribute_name in attributes:
         print("Information: The value for", attribute_name, "has been ignored.")
@@ -14,69 +19,26 @@ def clear_metadata_value(attributes, attribute_name):
 
 #******************************************************************************
 def get_metadata_type(attribute_name):
-    
+    """ Retrieve the specified attribute's type.
+
+    :param attribute_name: The name of the attribute to retrive the type for.
+    :returns: The attribute's type, None if not found.
+    """
+
     typeMap = dict()
         
-    typeMap['editionNumber'] = numpy.int64          #
-    typeMap['updateNumber'] = numpy.int64           #
-    typeMap['horizontalDatumValue'] = numpy.int64   #
-    typeMap['westBoundLongitude'] = numpy.float64   #
-    typeMap['eastBoundLongitude'] = numpy.float64   #
-    typeMap['southBoundLatitude'] = numpy.float64   #
-    typeMap['northBoundLatitude'] = numpy.float64   #
-    typeMap['timeRecordInterval'] = numpy.int64     #
-    typeMap['numberOfTimes'] = numpy.int64          #
-    typeMap['typeOfCurrentData'] = numpy.int64      #
-    typeMap['dataCodingFormat'] = numpy.int64       #
-    typeMap['numberOfStations'] = numpy.int64       #
-    typeMap['depthTypeIndex'] = numpy.int64         #
-    typeMap['surfaceCurrentDepth'] = numpy.float64  #
-    typeMap['verticalDatum'] = numpy.int64          #
-    typeMap['gridOriginLongitude'] = numpy.float64  #
-    typeMap['gridOriginLatitude'] = numpy.float64   #
-    typeMap['gridSpacingLongitudinal'] = numpy.float64  #
-    typeMap['gridSpacingLatitudinal'] = numpy.float64   #
-    typeMap['numberPointsLong'] = numpy.int64       #
-    typeMap['numberPointsLat'] = numpy.int64        #
-    typeMap['minimumGridPointLongitudinal'] = numpy.int64   #
-    typeMap['minimumGridPointLatitudinal'] = numpy.int64    #
-    typeMap['numberOfNodes'] = numpy.int64          #
-    typeMap['gridLandMaskValue'] = numpy.float64    #
-    typeMap['uncertaintyOfSpeed'] = numpy.float64   #
-    typeMap['uncertaintyOfDirection'] = numpy.float64   #
-    typeMap['uncertaintyOfHorizontalPosition'] = numpy.float64   #
-    typeMap['uncertaintyOfVerticalPosition'] = numpy.float64    #
-    typeMap['uncertaintyOfTime'] = numpy.float64    #
-    
-    typeMap['nationalOriginator'] = numpy.bytes_        #
-    typeMap['producingAgency'] = numpy.bytes_           #
-    typeMap['productSpecification'] = numpy.bytes_      #
-    typeMap['dateOfIssue'] = numpy.bytes_               #
-    typeMap['updateApplicationDate'] = numpy.bytes_     #
-    typeMap['fileName'] = numpy.bytes_                  #
-    typeMap['dataType'] = numpy.bytes_                  #
-    typeMap['nameRegion'] = numpy.bytes_                #
-    typeMap['nameSubregion'] = numpy.bytes_             #
-    typeMap['horizontalDatumReference'] = numpy.bytes_  #
-    typeMap['dateOfFirstRecord'] = numpy.bytes_         #
-    typeMap['dateOfLastRecord'] = numpy.bytes_          #
-    typeMap['methodOrSource'] = numpy.bytes_            #
-    typeMap['dateTimeOfFirstRecord'] = numpy.bytes_ 
-    typeMap['dateTimeOfLastRecord'] = numpy.bytes_ 
-    typeMap['Filename'] = numpy.bytes_ 
-    typeMap['Datatype'] = numpy.bytes_ 
-
-    '''
-    typeMap['Update_No.'] = numpy.int64
-    typeMap['horizDatumValue'] = numpy.int64
-    typeMap['minLongitude'] = numpy.float64
-    typeMap['maxLongitude'] = numpy.float64
-    typeMap['minLatitude'] = numpy.float64
-    typeMap['maxLatitude'] = numpy.float64
-    typeMap['timeRecordInterval(s)'] = numpy.int64
-    typeMap['nTimes'] = numpy.int64
-    typeMap['nStations'] = numpy.int64
+    typeMap['editionNumber'] = numpy.int64
+    typeMap['updateNumber'] = numpy.int64 
+    typeMap['horizontalDatumValue'] = numpy.int64
+    typeMap['westBoundLongitude'] = numpy.float64
+    typeMap['eastBoundLongitude'] = numpy.float64
+    typeMap['southBoundLatitude'] = numpy.float64
+    typeMap['northBoundLatitude'] = numpy.float64
+    typeMap['timeRecordInterval'] = numpy.int64
+    typeMap['numberOfTimes'] = numpy.int64
     typeMap['typeOfCurrentData'] = numpy.int64
+    typeMap['dataCodingFormat'] = numpy.int64
+    typeMap['numberOfStations'] = numpy.int64
     typeMap['depthTypeIndex'] = numpy.int64
     typeMap['surfaceCurrentDepth'] = numpy.float64
     typeMap['verticalDatum'] = numpy.int64
@@ -84,17 +46,35 @@ def get_metadata_type(attribute_name):
     typeMap['gridOriginLatitude'] = numpy.float64
     typeMap['gridSpacingLongitudinal'] = numpy.float64
     typeMap['gridSpacingLatitudinal'] = numpy.float64
-    typeMap['numGridPointsLongitudinal'] = numpy.int64
-    typeMap['numGridPointsLatitudinal'] = numpy.int64
+    typeMap['numberPointsLong'] = numpy.int64
+    typeMap['numberPointsLat'] = numpy.int64
     typeMap['minimumGridPointLongitudinal'] = numpy.int64
     typeMap['minimumGridPointLatitudinal'] = numpy.int64
+    typeMap['numberOfNodes'] = numpy.int64
     typeMap['gridLandMaskValue'] = numpy.float64
     typeMap['uncertaintyOfSpeed'] = numpy.float64
     typeMap['uncertaintyOfDirection'] = numpy.float64
-    typeMap['uncertaintyOfHorizPosition'] = numpy.float64
-    typeMap['uncertaintyOfVertPosition'] = numpy.float64
+    typeMap['uncertaintyOfHorizontalPosition'] = numpy.float64
+    typeMap['uncertaintyOfVerticalPosition'] = numpy.float64
     typeMap['uncertaintyOfTime'] = numpy.float64
-    '''
+    
+    typeMap['nationalOriginator'] = numpy.bytes_
+    typeMap['producingAgency'] = numpy.bytes_
+    typeMap['productSpecification'] = numpy.bytes_
+    typeMap['dateOfIssue'] = numpy.bytes_
+    typeMap['updateApplicationDate'] = numpy.bytes_
+    typeMap['fileName'] = numpy.bytes_
+    typeMap['dataType'] = numpy.bytes_
+    typeMap['nameRegion'] = numpy.bytes_
+    typeMap['nameSubregion'] = numpy.bytes_
+    typeMap['horizontalDatumReference'] = numpy.bytes_
+    typeMap['dateOfFirstRecord'] = numpy.bytes_
+    typeMap['dateOfLastRecord'] = numpy.bytes_
+    typeMap['methodOrSource'] = numpy.bytes_
+    typeMap['dateTimeOfFirstRecord'] = numpy.bytes_ 
+    typeMap['dateTimeOfLastRecord'] = numpy.bytes_ 
+    typeMap['Filename'] = numpy.bytes_ 
+    typeMap['Datatype'] = numpy.bytes_ 
 
     if attribute_name not in typeMap:
         return None
@@ -103,7 +83,12 @@ def get_metadata_type(attribute_name):
     
 #******************************************************************************
 def add_metadata(attributes, metadata_file):
-    
+    """ Add metadata values to the S-111 attributes.
+
+    :param attributes: The S-111 attributes to be populated.
+    :param metadata_file: The ASCII CSV file to retrieve the metadata values from.
+    """
+
     with open(metadata_file) as metaFile:
 
         for line in metaFile:
@@ -145,6 +130,7 @@ def add_metadata(attributes, metadata_file):
 
         
     '''
+    TODO - This code will be re-enabled.
     with open(metadata_file) as csvfile:
         reader = csv.reader(csvfile)
         
@@ -178,7 +164,14 @@ def add_metadata(attributes, metadata_file):
 
 #******************************************************************************    
 def create_dataset(output_file, metadata_file):
-    
+    """ Create a new S-111 dataset.
+
+    :param output_file: The name of the file to be created.
+    :param metadata_file: The ASCII CSV file to retrieve the metadata values from.
+    """
+
+    #TODO - Fix the output file extension?
+
     #Create the new HDF5 file.
     f = h5py.File(output_file, "w")
     
@@ -190,6 +183,10 @@ def create_dataset(output_file, metadata_file):
     
 #******************************************************************************        
 def create_command_line():
+    """Create and initialize the command line parser.
+    
+    :returns: The command line parser.
+    """
 
     parser = argparse.ArgumentParser(description='Create S-111 File')
 
@@ -209,4 +206,7 @@ def main():
     
     create_dataset(results.outputFile[0], results.metadata_file)
 
-main()
+
+
+if __name__ == "__main__":
+    main()

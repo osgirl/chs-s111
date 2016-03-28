@@ -8,6 +8,10 @@ import numpy
 
 #******************************************************************************        
 def create_command_line():
+    """Create and initialize the command line parser.
+    
+    :returns: The command line parser.
+    """
 
     parser = argparse.ArgumentParser(description='Print the contents of an S-111 File.')
 
@@ -36,7 +40,6 @@ def main():
         
         print("\nGroup", key)
         dset = f[key]
-        #print(dset)
         
         print("    Metadata")
         for name, value in dset.attrs.items():
@@ -47,12 +50,11 @@ def main():
             print("    ", datasetName)
             
             dataset = dset[datasetName]
-            #print(dataset)
 
             print("        Type", dataset.dtype)
             print("        Shape", dataset.shape)
             print("        Size", dataset.size)
+
             
-            #print(dataset[:])
-            
-main()
+if __name__ == "__main__":
+    main()
