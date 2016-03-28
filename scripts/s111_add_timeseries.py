@@ -159,8 +159,9 @@ def add_series_group(hdf_file, time_file):
     newGroupName = 'Group ' + str(numCurrentStations)
     newGroup = hdf_file.create_group(newGroupName)
     
-    #TODO - where does the title come from?
-    newGroup.attrs.create('Title', b'Station No. 1')
+    #Store the title
+    newGroupTitle = 'Station No. ' + str(numCurrentStations)
+    newGroup.attrs.create('Title', newGroupTitle.encode())
 
     #Store the start time.
     strVal = time_file.start_time.strftime("%Y%m%dT%H%M%SZ")

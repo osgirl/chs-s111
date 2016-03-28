@@ -89,48 +89,6 @@ def add_metadata(attributes, metadata_file):
     :param metadata_file: The ASCII CSV file to retrieve the metadata values from.
     """
 
-    with open(metadata_file) as metaFile:
-
-        for line in metaFile:
-
-            data = line.split()
-
-            #Skip any lines that do not have both a key and value.
-            if len(data) < 2:
-                continue
-
-            attribute_name = data[0]
-            attribute_value = data[1].encode()
-            attribute_type = get_metadata_type(attribute_name)
-            
-            #If we don't know what this attribute is, just report it to the user.
-            if attribute_type == None:
-                print("Warning: Unknown metadata value", attribute_name)
-            #Else if this is a string type...
-            elif attribute_type == numpy.bytes_:
-                attributes.create(attribute_name, attribute_value)
-            #Else use the type returned.
-            else:
-                attributes.create(attribute_name, attribute_value, dtype=attribute_type)
-
-
-
-    #We have a few pieces of metadata that may have been specified... but we want to ignore
-    #They are computed attributes.
-    clear_metadata_value(attributes, 'westBoundLongitude')
-    clear_metadata_value(attributes, 'eastBoundLongitude')
-    clear_metadata_value(attributes, 'southBoundLatitude')
-    clear_metadata_value(attributes, 'northBoundLatitude')
-    clear_metadata_value(attributes, 'dateTimeOfFirstRecord')
-    clear_metadata_value(attributes, 'dateTimeOfLastRecord')
-    clear_metadata_value(attributes, 'numberOfStations')
-    clear_metadata_value(attributes, 'numberOfTimes')
-    clear_metadata_value(attributes, 'dataCodingFormat')
-    clear_metadata_value(attributes, 'timeRecordInterval')
-
-        
-    '''
-    TODO - This code will be re-enabled.
     with open(metadata_file) as csvfile:
         reader = csv.reader(csvfile)
         
@@ -148,7 +106,7 @@ def add_metadata(attributes, metadata_file):
             
             #If we don't know what this attribute is, just report it to the user.
             if attribute_type == None:
-                print("Unknown metadata value", attribute_name)
+                print("Warning: Unknown metadata value", attribute_name)
             #Else if this is a string type...
             elif attribute_type == numpy.bytes_:
                 attributes.create(attribute_name, attribute_value)
@@ -157,7 +115,22 @@ def add_metadata(attributes, metadata_file):
                 attributes.create(attribute_name, attribute_value, dtype=attribute_type)
                 
             colnum += 1
-    '''
+
+
+    #We have a few pieces of metadata that may have been specified... but we want to ignore
+    #They are computed attributes.
+    clear_metadata_value(attributes, 'westBoundLongitude')
+    clear_metadata_value(attributes, 'eastBoundLongitude')
+    clear_metadata_value(attributes, 'southBoundLatitude')
+    clear_metadata_value(attributes, 'northBoundLatitude')
+    clear_metadata_value(attributes, 'dateTimeOfFirstRecord')
+    clear_metadata_value(attributes, 'dateTimeOfLastRecord')
+    clear_metadata_value(attributes, 'numberOfStations')
+    clear_metadata_value(attributes, 'numberOfTimes')
+    clear_metadata_value(attributes, 'dataCodingFormat')
+    clear_metadata_value(attributes, 'timeRecordInterval')
+
+
     #Since this is a new file, we don't have any stations yet.
     attributes.create('numberOfStations', 0, dtype=numpy.int64)
     attributes.create('numberOfTimes', 0, dtype=numpy.int64)
@@ -170,10 +143,12 @@ def create_dataset(output_file, metadata_file):
     :param metadata_file: The ASCII CSV file to retrieve the metadata values from.
     """
 
-    #TODO - Fix the output file extension?
+    #Make sure the output file has the correct extension.
+    filename, file_extension = os.path.splitext(output_file)
+    output_file_with_extension = filename + ".nc"
 
     #Create the new HDF5 file.
-    f = h5py.File(output_file, "w")
+    f = h5py.File(output_file_with_extension, "w")
     
     #Add the metadata to the file.
     add_metadata(f.attrs, metadata_file)

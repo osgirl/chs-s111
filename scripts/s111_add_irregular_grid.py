@@ -118,8 +118,8 @@ def create_data_groups(hdf_file, times, ua, va):
         print("Creating", newGroupName, "dataset.")
         newGroup = hdf_file.create_group(newGroupName)
         
-        #TODO - where does the title come from?
-        newGroup.attrs.create('Title', b'Station No. 1')
+        groupTitle = 'Irregular Grid at DateTime ' + str(index + 1)
+        newGroup.attrs.create('Title', groupTitle.encode())
 
         #Store the start time.
         strVal = times[index].tostring().decode()
