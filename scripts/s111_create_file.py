@@ -5,6 +5,7 @@ import argparse
 import h5py
 import numpy
 import csv
+import os
 
 def clear_metadata_value(attributes, attribute_name):
     """ Clear the specified attribute value.
@@ -104,15 +105,25 @@ def add_metadata(attributes, metadata_file):
             attribute_value = col.strip().encode()
             attribute_type = get_metadata_type(attribute_name)
             
-            #If we don't know what this attribute is, just report it to the user.
-            if attribute_type == None:
-                print("Warning: Unknown metadata value", attribute_name)
-            #Else if this is a string type...
-            elif attribute_type == numpy.bytes_:
-                attributes.create(attribute_name, attribute_value)
-            #Else use the type returned.
-            else:
-                attributes.create(attribute_name, attribute_value, dtype=attribute_type)
+            #Just skip any empty values.
+            if len(attribute_value) == 0:
+                continue
+
+            try:
+                #If we don't know what this attribute is, just report it to the user.
+                if attribute_type == None:
+                    print("Warning: Unknown metadata value", attribute_name)
+                #Else if this is a string type...
+                elif attribute_type == numpy.bytes_:
+                    attributes.create(attribute_name, attribute_value)
+                #Else use the type returned.
+                else:
+                    attributes.create(attribute_name, attribute_value, dtype=attribute_type)
+
+            except:
+                print("Failed to set metadata")
+                print("Attribute name:", attribute_name, "Attribute value:", attribute_value.decode())
+                raise
                 
             colnum += 1
 
@@ -129,7 +140,7 @@ def add_metadata(attributes, metadata_file):
     clear_metadata_value(attributes, 'numberOfTimes')
     clear_metadata_value(attributes, 'dataCodingFormat')
     clear_metadata_value(attributes, 'timeRecordInterval')
-
+    clear_metadata_value(attributes, 'Filename')
 
     #Since this is a new file, we don't have any stations yet.
     attributes.create('numberOfStations', 0, dtype=numpy.int64)
@@ -145,7 +156,7 @@ def create_dataset(output_file, metadata_file):
 
     #Make sure the output file has the correct extension.
     filename, file_extension = os.path.splitext(output_file)
-    output_file_with_extension = filename + ".nc"
+    output_file_with_extension = filename + ".h5"
 
     #Create the new HDF5 file.
     f = h5py.File(output_file_with_extension, "w")
@@ -153,6 +164,10 @@ def create_dataset(output_file, metadata_file):
     #Add the metadata to the file.
     add_metadata(f.attrs, metadata_file)
     
+    #Set the correct filename in the metadata.
+    path, file = os.path.split(output_file_with_extension)
+    f.attrs.create('Filename', file.encode())
+
     #We are done... so close the file.
     f.close()
     

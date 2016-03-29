@@ -106,12 +106,15 @@ def add_series_group(hdf_file, time_file):
         #Add the 'Group XY' to store the position information.
         xy_group = hdf_file.create_group('Group XY')
 
-        #Add the x and y datasets to the xy group.
-        x_dataset = xy_group.create_dataset('X', (1, 1), maxshape=(1, None), dtype=numpy.float64)
-        x_dataset[0][0] = time_file.longitude
+        x = numpy.empty((1, 1), dtype=numpy.float64)
+        x[0][0] = time_file.longitude
 
-        y_dataset = xy_group.create_dataset('Y', (1, 1), maxshape=(1, None), dtype=numpy.float64)       
-        y_dataset[0][0] = time_file.latitude
+        y = numpy.empty((1, 1), dtype=numpy.float64)
+        y[0][0] = time_file.latitude
+
+        #Add the x and y datasets to the xy group.
+        xy_group.create_dataset('X', maxshape=(1, None), data=x)
+        xy_group.create_dataset('Y', maxshape=(1, None), data=y)       
 
     #Else this is not a new file, so lets verify a few things.
     else:
@@ -137,12 +140,11 @@ def add_series_group(hdf_file, time_file):
 
         x_dataset = xy_group['X']
         x_dataset.resize((1, numCurrentStations+1))
-        x_dataset[0][numCurrentStations] = time_file.longitude
+        x_dataset[0, numCurrentStations] = time_file.longitude
 
         y_dataset = xy_group['Y']
         y_dataset.resize((1, numCurrentStations+1))
-        y_dataset[0][numCurrentStations] = time_file.latitude
-
+        y_dataset[0, numCurrentStations] = time_file.latitude
     
             
     #Update the area coverage information.
@@ -180,9 +182,9 @@ def add_series_datasets(group, time_file):
     :param time_file: The input ASCII file containing the timeseries data.
     """
 
-    #Create a new dataset.
-    directions = group.create_dataset('Direction', (1, time_file.number_of_records), dtype=numpy.float64)
-    speeds = group.create_dataset('Speed', (1, time_file.number_of_records), dtype=numpy.float64)
+    #Allocate the arrays for the direction and speed data.
+    directions = numpy.empty((1, time_file.number_of_records), dtype=numpy.float64)
+    speeds = numpy.empty((1, time_file.number_of_records), dtype=numpy.float64)
 
     print("Adding direction and speed information...")
 
@@ -190,9 +192,14 @@ def add_series_datasets(group, time_file):
     for row_counter in range(0, time_file.number_of_records):
 
         #Read the data from the ascii file and store it in the HDF5 dataset.
-        data_values = time_file.read_next_row()
-        directions[0][row_counter] = data_values[1]
-        speeds[0][row_counter] = data_values[2]
+        dateAndTime, direction, speed = time_file.read_next_row()
+        directions[0][row_counter] = direction
+        speeds[0][row_counter] = speed
+
+
+    #Create a new dataset.
+    group.create_dataset('Direction', data=directions)
+    group.create_dataset('Speed', data=speeds)
     
 
 #******************************************************************************        

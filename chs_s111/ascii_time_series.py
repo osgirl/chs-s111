@@ -13,7 +13,6 @@ class AsciiTimeSeries:
     def __init__(self, file_name):
         self.file_name = file_name
 
-        self.file_name = None
         self.ascii_file = None
         self.interval = None
         self.start_time = None
@@ -144,10 +143,6 @@ class AsciiTimeSeries:
 
         self.current_record += 1
         asciiData = self.ascii_file.readline()
-
-        dateAndTime = None
-        direction = None
-        speed = None
 
         #We expect the following: Date (YYYY/MM/DD), HourMinute (hhmm), Direction (deg T), Speed (m/s) 
         components = asciiData.split()

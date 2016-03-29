@@ -29,10 +29,6 @@ def create_xy_group(hdf_file, latc, lonc):
     print("Creating", groupName, "dataset.")
     xy_group = hdf_file.create_group(groupName)
 
-    #Add the x and y datasets to the xy group.
-    x_dataset = xy_group.create_dataset('X', (1, numberOfLat), dtype=numpy.float64)
-    y_dataset = xy_group.create_dataset('Y', (1, numberOfLon), dtype=numpy.float64)       
-
     xCoordinates =  numpy.empty((1, numberOfLat), dtype=numpy.float64)
     yCoordinates = numpy.empty((1, numberOfLon), dtype=numpy.float64)
     minX = minY = maxX = maxY = None
@@ -54,8 +50,9 @@ def create_xy_group(hdf_file, latc, lonc):
         xCoordinates[0][index] = longitude
         yCoordinates[0][index] = latitude
 
-    x_dataset = xCoordinates
-    y_dataset = yCoordinates
+    #Add the x and y datasets to the xy group.
+    xy_group.create_dataset('X', data=xCoordinates)
+    xy_group.create_dataset('Y', data=yCoordinates)
 
     return (minX, minY, maxX, maxY)
 
@@ -70,9 +67,6 @@ def create_direction_speed(group, ua, va):
     """
 
     numberOfVaValues = len(va)
-
-    direction_dataset = group.create_dataset('Direction', (1, numberOfVaValues), dtype=numpy.float64)
-    speed_dataset = group.create_dataset('Speed', (1, numberOfVaValues), dtype=numpy.float64)
 
     directions = numpy.empty((1, numberOfVaValues), dtype=numpy.float64)
     speeds = numpy.empty((1, numberOfVaValues), dtype=numpy.float64)
@@ -93,8 +87,8 @@ def create_direction_speed(group, ua, va):
         directions[0][index] = windDirectionNorth
         speeds[0][index] = windSpeed
 
-    direction_dataset = directions
-    speed_dataset = speeds
+    group.create_dataset('Direction', data=directions)
+    group.create_dataset('Speed', data=speeds)
 
 
 #******************************************************************************        
@@ -252,9 +246,7 @@ def main():
         raise Exception('The number of positions does not match the number of speed and distance values.')
 
     #Verify that the input data is in the correct units.
-    vaUnits = va.attributes['units']
-    uaUnits = ua.attributes['units']
-    if vaUnits != uaUnits and vaUnits != 'metres s-1':
+    if va.units != ua.units and va.units != 'metres s-1':
         raise Exception('The input velocity data is stored in an unsupported unit.')
 
     print("Adding irregular grid dataset")
