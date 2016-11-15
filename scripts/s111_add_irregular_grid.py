@@ -90,6 +90,10 @@ def create_direction_speed(group, ua, va):
         windDirectionDegrees = math.degrees(windDirectionRadians)
         windDirectionNorth = 90.0 - windDirectionDegrees
 
+        #The direction must always be positive.
+        if windDirectionNorth < 0.0:
+            windDirectionNorth += 360.0
+
         directions[0][index] = windDirectionNorth
         speeds[0][index] = windSpeed
 
