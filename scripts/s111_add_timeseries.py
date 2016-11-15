@@ -2,6 +2,7 @@
 #
 #******************************************************************************
 import argparse
+import sys
 import h5py
 import numpy
 import iso8601
@@ -76,6 +77,25 @@ def update_temporal_coverage(hdf_file, start_time, end_time):
     dateTimeOfLastRecord = dateTimeOfLastRecord.astimezone(pytz.utc)
     strVal = dateTimeOfLastRecord.strftime("%Y%m%dT%H%M%SZ")
     hdf_file.attrs.create('dateTimeOfLastRecord', strVal.encode())
+
+
+#******************************************************************************
+def update_current_speed(hdf_file, min_speed, max_speed):
+    """Update the min/max current speed values of the S-111 file.
+    
+    :param hdf_file: The S-111 HDF file.
+    :param min_speed: The minimum current speed value added.
+    :param max_speed: The maximum current speed value added.
+    """
+
+    if 'minSurfCurrentSpeed' in hdf_file.attrs:
+        min_speed = min(min_speed, hdf_file.attrs['minSurfCurrentSpeed'])
+
+    if 'maxSurfCurrentSpeed' in hdf_file.attrs:
+        max_speed = max(max_speed, hdf_file.attrs['maxSurfCurrentSpeed'])
+
+    hdf_file.attrs.create('minSurfCurrentSpeed', min_speed)
+    hdf_file.attrs.create('maxSurfCurrentSpeed', max_speed)
 
 
 #******************************************************************************
@@ -178,7 +198,11 @@ def add_series_datasets(group, time_file):
     
     :param group: The HDF group to add the speed and direction datasets to.
     :param time_file: The input ASCII file containing the timeseries data.
+    :returns: A tuple containing the minimum and maximum speed values added.
     """
+
+    min_speed = None
+    max_speed = None
 
     #Create a new dataset.
     directions = group.create_dataset('Direction', (1, time_file.number_of_records), dtype=numpy.float64)
@@ -193,6 +217,16 @@ def add_series_datasets(group, time_file):
         data_values = time_file.read_next_row()
         directions[0][row_counter] = data_values[1]
         speeds[0][row_counter] = data_values[2]
+
+        #Find the min/max speed values.
+        for speed in data_values[2]:
+            if min_speed == None:
+                min_speed = max_speed = speed
+            else:
+                min_speed = min(min_speed, speed)
+                max_speed = max(max_speed, speed)
+
+    return (min_speed, max_speed)
     
 
 #******************************************************************************        
@@ -230,8 +264,11 @@ def main():
     new_group = add_series_group(hdf_file, time_file)
 
     #Add the direction and speed
-    add_series_datasets(new_group, time_file)
-    
+    min_speed, max_speed = add_series_datasets(new_group, time_file)
+
+    #Update the min/max speed in the metadata.
+    update_current_speed(hdf_file, min_speed, max_speed)
+
     #We are done, so lets close the file.
     hdf_file.close()
 
