@@ -29,6 +29,10 @@ def create_xy_group(hdf_file, latc, lonc):
     print("Creating", groupName, "dataset.")
     xy_group = hdf_file.create_group(groupName)
 
+    #Add the x and y datasets to the xy group.
+    x_dataset = xy_group.create_dataset('X', (1, numberOfLat), dtype=numpy.float64)
+    y_dataset = xy_group.create_dataset('Y', (1, numberOfLon), dtype=numpy.float64)       
+
     xCoordinates =  numpy.empty((1, numberOfLat), dtype=numpy.float64)
     yCoordinates = numpy.empty((1, numberOfLon), dtype=numpy.float64)
     minX = minY = maxX = maxY = None
@@ -50,9 +54,8 @@ def create_xy_group(hdf_file, latc, lonc):
         xCoordinates[0][index] = longitude
         yCoordinates[0][index] = latitude
 
-    #Add the x and y datasets to the xy group.
-    xy_group.create_dataset('X', data=xCoordinates)
-    xy_group.create_dataset('Y', data=yCoordinates)
+    x_dataset = xCoordinates
+    y_dataset = yCoordinates
 
     return (minX, minY, maxX, maxY)
 
@@ -64,9 +67,16 @@ def create_direction_speed(group, ua, va):
     :param group: The HDF group to add the speed and direction datasets to.
     :param ua: List of velocity values along the x axis in metres per second.
     :param va: List of velocity values along the y axis in metres per second.
+    :returns: A tuple containing the minimum and maximum speed values added.
     """
 
+    min_speed = None
+    max_speed = None
+
     numberOfVaValues = len(va)
+
+    direction_dataset = group.create_dataset('Direction', (1, numberOfVaValues), dtype=numpy.float64)
+    speed_dataset = group.create_dataset('Speed', (1, numberOfVaValues), dtype=numpy.float64)
 
     directions = numpy.empty((1, numberOfVaValues), dtype=numpy.float64)
     speeds = numpy.empty((1, numberOfVaValues), dtype=numpy.float64)
@@ -84,11 +94,23 @@ def create_direction_speed(group, ua, va):
         windDirectionDegrees = math.degrees(windDirectionRadians)
         windDirectionNorth = 90.0 - windDirectionDegrees
 
+        #The direction must always be positive.
+        if windDirectionNorth < 0.0:
+            windDirectionNorth += 360.0
+
         directions[0][index] = windDirectionNorth
         speeds[0][index] = windSpeed
 
-    group.create_dataset('Direction', data=directions)
-    group.create_dataset('Speed', data=speeds)
+        if min_speed == None:
+            min_speed = max_speed = windSpeed
+        else:
+            min_speed = min(min_speed, windSpeed)
+            max_speed = max(max_speed, windSpeed)
+
+    direction_dataset = directions
+    speed_dataset = speeds
+
+    return min_speed, max_speed
 
 
 #******************************************************************************        
@@ -99,13 +121,14 @@ def create_data_groups(hdf_file, times, ua, va):
     :param times: The list of time values from the source data.
     :param ua: List of velocity values along the x axis in metres per second. (An array of values per time)
     :param va: List of velocity values along the y axis in metres per second. (An array of values per time)
-    :returns: A tuple containing the minimum time, maximum time, and time interval of the source data.
+    :returns: A tuple containing the minimum time, maximum time, time interval, minimum speed, and maximum speed of the source data.
     """
 
     numberOfTimes = times.shape[0]
     
     interval = None
     minTime = maxTime = None
+    minSpeed = maxSpeed = None
     for index in range(0, numberOfTimes):
 
         newGroupName = 'Group ' + str(index + 1)
@@ -130,7 +153,15 @@ def create_data_groups(hdf_file, times, ua, va):
         strVal = timeVal.strftime("%Y%m%dT%H%M%SZ")
         newGroup.attrs.create('DateTime', strVal.encode())
 
-        create_direction_speed(newGroup, ua[index], va[index])
+        groupMinSpeed, groupMaxSpeed = create_direction_speed(newGroup, ua[index], va[index])
+
+        #Keep track of the min/max speed so we can update the metadata
+        if minSpeed == None:
+            minSpeed = groupMinSpeed
+            maxSpeed = groupMaxSpeed
+        else:
+            minSpeed = min(minSpeed, groupMinSpeed)
+            maxSpeed = max(maxSpeed, groupMaxSpeed)
 
     #Figure out what the interval is between the times (use only the first)
     if numberOfTimes > 1:
@@ -145,11 +176,11 @@ def create_data_groups(hdf_file, times, ua, va):
 
         interval = secondTimeVal - firstTimeVal
 
-    return (minTime, maxTime, interval)
+    return (minTime, maxTime, interval, minSpeed, maxSpeed)
 
 
 #******************************************************************************        
-def update_metadata(hdf_file, numberOfTimes, numberOfValues, minTime, maxTime, interval, minX, minY, maxX, maxY):
+def update_metadata(hdf_file, numberOfTimes, numberOfValues, minTime, maxTime, interval, minX, minY, maxX, maxY, minSpeed, maxSpeed):
     """Update the S-111 file's metadata.
 
     :param hdf_file: The S-111 HDF file.
@@ -162,6 +193,8 @@ def update_metadata(hdf_file, numberOfTimes, numberOfValues, minTime, maxTime, i
     :param minY: The minimum y coordinate of the source data.
     :param maxX: The maximum x coordinate of the source data.
     :param maxY: The maximum y coordinate of the source data.
+    :param minSpeed: The minimum surface speed of the source data.
+    :param maxSpeed: The maximum surface speed of the source data.
     """
 
     #Set the correct coding format.
@@ -189,6 +222,16 @@ def update_metadata(hdf_file, numberOfTimes, numberOfValues, minTime, maxTime, i
     hdf_file.attrs.create('eastBoundLongitude', maxX, dtype=numpy.float64)
     hdf_file.attrs.create('southBoundLatitude', minY, dtype=numpy.float64)
     hdf_file.attrs.create('northBoundLatitude', maxY, dtype=numpy.float64)
+
+    #Update the surface speed values.
+    if 'minSurfCurrentSpeed' in hdf_file.attrs:
+        minSpeed = min(minSpeed, hdf_file.attrs['minSurfCurrentSpeed'])
+
+    if 'maxSurfCurrentSpeed' in hdf_file.attrs:
+        maxSpeed = max(maxSpeed, hdf_file.attrs['maxSurfCurrentSpeed'])
+
+    hdf_file.attrs.create('minSurfCurrentSpeed', minSpeed)
+    hdf_file.attrs.create('maxSurfCurrentSpeed', maxSpeed)
 
 
 #******************************************************************************        
@@ -241,12 +284,14 @@ def main():
     numberOfVaValues = va.shape[1]
     numberOfUaValues = ua.shape[1]
     if numberOfLat != numberOfLon:
-        raise Exception('The iput latitude and longitude array are different sizes.')
+        raise Exception('The input latitude and longitude array are different sizes.')
     elif numberOfLat != numberOfVaValues or numberOfLat != numberOfUaValues:
         raise Exception('The number of positions does not match the number of speed and distance values.')
 
     #Verify that the input data is in the correct units.
-    if va.units != ua.units and va.units != 'metres s-1':
+    vaUnits = va.getncattr('units')
+    uaUnits = ua.getncattr('units')
+    if vaUnits != uaUnits and vaUnits != 'metres s-1':
         raise Exception('The input velocity data is stored in an unsupported unit.')
 
     print("Adding irregular grid dataset")
@@ -257,11 +302,12 @@ def main():
     minX, minY, maxX, maxY = create_xy_group(hdf_file, latc, lonc)
     
     #Add all of the groups
-    minTime, maxTime, interval = create_data_groups(hdf_file, times, ua, va)
+    minTime, maxTime, interval, minSpeed, maxSpeed = create_data_groups(hdf_file, times, ua, va)
 
     #Update the s-111 file's metadata
     update_metadata(hdf_file, numberOfTimes, numberOfVaValues,
-                    minTime, maxTime, interval, minX, minY, maxX, maxY)
+                    minTime, maxTime, interval, minX, minY, maxX, maxY,
+                    minSpeed, maxSpeed)
 
     print("Dataset successfully added")
 

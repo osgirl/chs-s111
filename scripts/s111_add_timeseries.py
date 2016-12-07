@@ -2,6 +2,7 @@
 #
 #******************************************************************************
 import argparse
+import sys
 import h5py
 import numpy
 import iso8601
@@ -79,6 +80,25 @@ def update_temporal_coverage(hdf_file, start_time, end_time):
 
 
 #******************************************************************************
+def update_current_speed(hdf_file, min_speed, max_speed):
+    """Update the min/max current speed values of the S-111 file.
+    
+    :param hdf_file: The S-111 HDF file.
+    :param min_speed: The minimum current speed value added.
+    :param max_speed: The maximum current speed value added.
+    """
+
+    if 'minSurfCurrentSpeed' in hdf_file.attrs:
+        min_speed = min(min_speed, hdf_file.attrs['minSurfCurrentSpeed'])
+
+    if 'maxSurfCurrentSpeed' in hdf_file.attrs:
+        max_speed = max(max_speed, hdf_file.attrs['maxSurfCurrentSpeed'])
+
+    hdf_file.attrs.create('minSurfCurrentSpeed', min_speed)
+    hdf_file.attrs.create('maxSurfCurrentSpeed', max_speed)
+
+
+#******************************************************************************
 def add_series_group(hdf_file, time_file):
     """Add a new timeseries group to the given S-111 HDF file.
     
@@ -106,15 +126,12 @@ def add_series_group(hdf_file, time_file):
         #Add the 'Group XY' to store the position information.
         xy_group = hdf_file.create_group('Group XY')
 
-        x = numpy.empty((1, 1), dtype=numpy.float64)
-        x[0][0] = time_file.longitude
-
-        y = numpy.empty((1, 1), dtype=numpy.float64)
-        y[0][0] = time_file.latitude
-
         #Add the x and y datasets to the xy group.
-        xy_group.create_dataset('X', maxshape=(1, None), data=x)
-        xy_group.create_dataset('Y', maxshape=(1, None), data=y)       
+        x_dataset = xy_group.create_dataset('X', (1, 1), maxshape=(1, None), dtype=numpy.float64)
+        x_dataset[0][0] = time_file.longitude
+
+        y_dataset = xy_group.create_dataset('Y', (1, 1), maxshape=(1, None), dtype=numpy.float64)       
+        y_dataset[0][0] = time_file.latitude
 
     #Else this is not a new file, so lets verify a few things.
     else:
@@ -140,11 +157,12 @@ def add_series_group(hdf_file, time_file):
 
         x_dataset = xy_group['X']
         x_dataset.resize((1, numCurrentStations+1))
-        x_dataset[0, numCurrentStations] = time_file.longitude
+        x_dataset[0][numCurrentStations] = time_file.longitude
 
         y_dataset = xy_group['Y']
         y_dataset.resize((1, numCurrentStations+1))
-        y_dataset[0, numCurrentStations] = time_file.latitude
+        y_dataset[0][numCurrentStations] = time_file.latitude
+
     
             
     #Update the area coverage information.
@@ -180,11 +198,15 @@ def add_series_datasets(group, time_file):
     
     :param group: The HDF group to add the speed and direction datasets to.
     :param time_file: The input ASCII file containing the timeseries data.
+    :returns: A tuple containing the minimum and maximum speed values added.
     """
 
-    #Allocate the arrays for the direction and speed data.
-    directions = numpy.empty((1, time_file.number_of_records), dtype=numpy.float64)
-    speeds = numpy.empty((1, time_file.number_of_records), dtype=numpy.float64)
+    min_speed = None
+    max_speed = None
+
+    #Create a new dataset.
+    directions = group.create_dataset('Direction', (1, time_file.number_of_records), dtype=numpy.float64)
+    speeds = group.create_dataset('Speed', (1, time_file.number_of_records), dtype=numpy.float64)
 
     print("Adding direction and speed information...")
 
@@ -192,14 +214,18 @@ def add_series_datasets(group, time_file):
     for row_counter in range(0, time_file.number_of_records):
 
         #Read the data from the ascii file and store it in the HDF5 dataset.
-        dateAndTime, direction, speed = time_file.read_next_row()
-        directions[0][row_counter] = direction
-        speeds[0][row_counter] = speed
+        data_values = time_file.read_next_row()
+        directions[0][row_counter] = data_values[1]
+        speeds[0][row_counter] = data_values[2]
 
+        #Find the min/max speed values.
+        if min_speed == None:
+            min_speed = max_speed = data_values[2]
+        else:
+            min_speed = min(min_speed, data_values[2])
+            max_speed = max(max_speed, data_values[2])
 
-    #Create a new dataset.
-    group.create_dataset('Direction', data=directions)
-    group.create_dataset('Speed', data=speeds)
+    return (min_speed, max_speed)
     
 
 #******************************************************************************        
@@ -237,8 +263,11 @@ def main():
     new_group = add_series_group(hdf_file, time_file)
 
     #Add the direction and speed
-    add_series_datasets(new_group, time_file)
-    
+    min_speed, max_speed = add_series_datasets(new_group, time_file)
+
+    #Update the min/max speed in the metadata.
+    update_current_speed(hdf_file, min_speed, max_speed)
+
     #We are done, so lets close the file.
     hdf_file.close()
 

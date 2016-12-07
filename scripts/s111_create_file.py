@@ -28,54 +28,66 @@ def get_metadata_type(attribute_name):
 
     typeMap = dict()
         
-    typeMap['editionNumber'] = numpy.int64
-    typeMap['updateNumber'] = numpy.int64 
-    typeMap['horizontalDatumValue'] = numpy.int64
-    typeMap['westBoundLongitude'] = numpy.float64
-    typeMap['eastBoundLongitude'] = numpy.float64
-    typeMap['southBoundLatitude'] = numpy.float64
-    typeMap['northBoundLatitude'] = numpy.float64
+    """
+         Carrier Metadata
+    """
+    #Integer types
+    typeMap['horizDatumValue'] = numpy.int64
     typeMap['timeRecordInterval'] = numpy.int64
     typeMap['numberOfTimes'] = numpy.int64
-    typeMap['typeOfCurrentData'] = numpy.int64
-    typeMap['dataCodingFormat'] = numpy.int64
     typeMap['numberOfStations'] = numpy.int64
-    typeMap['depthTypeIndex'] = numpy.int64
-    typeMap['surfaceCurrentDepth'] = numpy.float64
     typeMap['verticalDatum'] = numpy.int64
+    typeMap['numPointsLongitudinal'] = numpy.int64
+    typeMap['numPointsLatitudinal'] = numpy.int64
+    typeMap['minGridPointLongitudinal'] = numpy.int64
+    typeMap['minGridPointLatitudinal'] = numpy.int64
+
+    #Real types
+    typeMap['surfaceCurrentDepth'] = numpy.float64
     typeMap['gridOriginLongitude'] = numpy.float64
     typeMap['gridOriginLatitude'] = numpy.float64
     typeMap['gridSpacingLongitudinal'] = numpy.float64
     typeMap['gridSpacingLatitudinal'] = numpy.float64
-    typeMap['numberPointsLong'] = numpy.int64
-    typeMap['numberPointsLat'] = numpy.int64
-    typeMap['minimumGridPointLongitudinal'] = numpy.int64
-    typeMap['minimumGridPointLatitudinal'] = numpy.int64
-    typeMap['numberOfNodes'] = numpy.int64
     typeMap['gridLandMaskValue'] = numpy.float64
     typeMap['uncertaintyOfSpeed'] = numpy.float64
     typeMap['uncertaintyOfDirection'] = numpy.float64
-    typeMap['uncertaintyOfHorizontalPosition'] = numpy.float64
-    typeMap['uncertaintyOfVerticalPosition'] = numpy.float64
+    typeMap['uncertaintyOfHorzPosition'] = numpy.float64
+    typeMap['uncertaintyOfVertPosition'] = numpy.float64
     typeMap['uncertaintyOfTime'] = numpy.float64
-    
-    typeMap['nationalOriginator'] = numpy.bytes_
-    typeMap['producingAgency'] = numpy.bytes_
+    typeMap['minSurfCurrentSpeed'] = numpy.float64
+    typeMap['maxSurfCurrentSpeed'] = numpy.float64
+
+    #String types
     typeMap['productSpecification'] = numpy.bytes_
-    typeMap['dateOfIssue'] = numpy.bytes_
+    typeMap['dateTimeOfIssue'] = numpy.bytes_
+    typeMap['nameRegion'] = numpy.bytes_
+    typeMap['nameSubregion'] = numpy.bytes_
+    typeMap['horizDatumReference'] = numpy.bytes_
+    typeMap['protectionScheme'] = numpy.bytes_
+    typeMap['dateTimeOfFirstRecord'] = numpy.bytes_
+    typeMap['dateTimeOfLastRecord'] = numpy.bytes_ 
+    typeMap['methodCurrentsProduct'] = numpy.bytes_
+
+    #Enumeration types
+    typeMap['dataProtection'] = numpy.int64
+    typeMap['typeOfCurrentData'] = numpy.int64
+    typeMap['dataCodingFormat'] = numpy.int64
+    typeMap['depthTypeIndex'] = numpy.int64
+
+    #Removed?
+    typeMap['nationalOriginator'] = numpy.bytes_
+    typeMap['producingAgency'] = numpy.bytes_    
     typeMap['updateApplicationDate'] = numpy.bytes_
     typeMap['fileName'] = numpy.bytes_
     typeMap['dataType'] = numpy.bytes_
-    typeMap['nameRegion'] = numpy.bytes_
-    typeMap['nameSubregion'] = numpy.bytes_
-    typeMap['horizontalDatumReference'] = numpy.bytes_
-    typeMap['dateOfFirstRecord'] = numpy.bytes_
-    typeMap['dateOfLastRecord'] = numpy.bytes_
     typeMap['methodOrSource'] = numpy.bytes_
-    typeMap['dateTimeOfFirstRecord'] = numpy.bytes_ 
-    typeMap['dateTimeOfLastRecord'] = numpy.bytes_ 
-    typeMap['Filename'] = numpy.bytes_ 
-    typeMap['Datatype'] = numpy.bytes_ 
+    typeMap['editionNumber'] = numpy.int64
+    typeMap['updateNumber'] = numpy.int64 
+    typeMap['numberOfNodes'] = numpy.int64
+    typeMap['westBoundLongitude'] = numpy.float64
+    typeMap['eastBoundLongitude'] = numpy.float64
+    typeMap['southBoundLatitude'] = numpy.float64
+    typeMap['northBoundLatitude'] = numpy.float64
 
     if attribute_name not in typeMap:
         return None
@@ -105,25 +117,15 @@ def add_metadata(attributes, metadata_file):
             attribute_value = col.strip().encode()
             attribute_type = get_metadata_type(attribute_name)
             
-            #Just skip any empty values.
-            if len(attribute_value) == 0:
-                continue
-
-            try:
-                #If we don't know what this attribute is, just report it to the user.
-                if attribute_type == None:
-                    print("Warning: Unknown metadata value", attribute_name)
-                #Else if this is a string type...
-                elif attribute_type == numpy.bytes_:
-                    attributes.create(attribute_name, attribute_value)
-                #Else use the type returned.
-                else:
-                    attributes.create(attribute_name, attribute_value, dtype=attribute_type)
-
-            except:
-                print("Failed to set metadata")
-                print("Attribute name:", attribute_name, "Attribute value:", attribute_value.decode())
-                raise
+            #If we don't know what this attribute is, just report it to the user.
+            if attribute_type == None:
+                print("Warning: Unknown metadata value", attribute_name)
+            #Else if this is a string type...
+            elif attribute_type == numpy.bytes_:
+                attributes.create(attribute_name, attribute_value)
+            #Else use the type returned.
+            else:
+                attributes.create(attribute_name, attribute_value, dtype=attribute_type)
                 
             colnum += 1
 
@@ -140,7 +142,8 @@ def add_metadata(attributes, metadata_file):
     clear_metadata_value(attributes, 'numberOfTimes')
     clear_metadata_value(attributes, 'dataCodingFormat')
     clear_metadata_value(attributes, 'timeRecordInterval')
-    clear_metadata_value(attributes, 'Filename')
+    clear_metadata_value(attributes, 'minSurfCurrentSpeed')
+    clear_metadata_value(attributes, 'maxSurfCurrentSpeed')
 
     #Since this is a new file, we don't have any stations yet.
     attributes.create('numberOfStations', 0, dtype=numpy.int64)
@@ -156,7 +159,7 @@ def create_dataset(output_file, metadata_file):
 
     #Make sure the output file has the correct extension.
     filename, file_extension = os.path.splitext(output_file)
-    output_file_with_extension = filename + ".h5"
+    output_file_with_extension = filename + ".nc"
 
     #Create the new HDF5 file.
     f = h5py.File(output_file_with_extension, "w")
@@ -164,12 +167,9 @@ def create_dataset(output_file, metadata_file):
     #Add the metadata to the file.
     add_metadata(f.attrs, metadata_file)
     
-    #Set the correct filename in the metadata.
-    path, file = os.path.split(output_file_with_extension)
-    f.attrs.create('Filename', file.encode())
-
     #We are done... so close the file.
-    f.close()
+    if f:
+        f.close()
     
 #******************************************************************************        
 def create_command_line():
