@@ -162,15 +162,11 @@ def create_dataset(output_file, metadata_file):
     output_file_with_extension = filename + ".nc"
 
     #Create the new HDF5 file.
-    f = h5py.File(output_file_with_extension, "w")
+    with h5py.File(output_file_with_extension, "w") as hdf_file:
     
-    #Add the metadata to the file.
-    add_metadata(f.attrs, metadata_file)
-    
-    #We are done... so close the file.
-    if f:
-        f.close()
-    
+        #Add the metadata to the file.
+        add_metadata(hdf_file.attrs, metadata_file)
+        
 #******************************************************************************        
 def create_command_line():
     """Create and initialize the command line parser.
