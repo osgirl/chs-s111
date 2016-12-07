@@ -259,61 +259,57 @@ def main():
     results = parser.parse_args()
     
     #open the HDF5 file.
-    hdf_file = h5py.File(results.inOutFile[0], "r+")
+    with h5py.File(results.inOutFile[0], "r+") as hdf_file:
+
+        #Open the grid file.
+        with netCDF4.Dataset(results.grid_file, "r", format="NETCDF4") as grid_file:
+
+            #Grab the data that we need.
+            times = grid_file.variables['Times']
+            latc = grid_file.variables['latc']
+            lonc = grid_file.variables['lonc']
+            ua = grid_file.variables['ua']
+            va = grid_file.variables['va']
+
+            #Verify that these arrays are the same size.
+            numberOfTimes = times.shape[0]
+            numberOfVaSeries = va.shape[0]
+            numberOfUaSeries = ua.shape[0]
+            if numberOfTimes != numberOfVaSeries or numberOfTimes != numberOfUaSeries:
+                raise Exception('The number of time values does not match the number of speed and distance values.')
+
+            #Verify that these arrays are the same size.
+            numberOfLat = latc.shape[0]
+            numberOfLon = lonc.shape[0]
+            numberOfVaValues = va.shape[1]
+            numberOfUaValues = ua.shape[1]
+            if numberOfLat != numberOfLon:
+                raise Exception('The input latitude and longitude array are different sizes.')
+            elif numberOfLat != numberOfVaValues or numberOfLat != numberOfUaValues:
+                raise Exception('The number of positions does not match the number of speed and distance values.')
+
+            #Verify that the input data is in the correct units.
+            vaUnits = va.getncattr('units')
+            uaUnits = ua.getncattr('units')
+            if vaUnits != uaUnits and vaUnits != 'metres s-1':
+                raise Exception('The input velocity data is stored in an unsupported unit.')
+
+            print("Adding irregular grid dataset")
+            print("Number of timestamps in source file:", numberOfTimes)
+            print("Number of records for each timestamp:", numberOfLat)
+
+            #Add the 'Group XY' to store the position information.
+            minX, minY, maxX, maxY = create_xy_group(hdf_file, latc, lonc)
     
-    #Open the grid file.
-    grid_file = netCDF4.Dataset(results.grid_file, "r", format="NETCDF4")
+            #Add all of the groups
+            minTime, maxTime, interval, minSpeed, maxSpeed = create_data_groups(hdf_file, times, ua, va)
 
-    #Grab the data that we need.
-    times = grid_file.variables['Times']
-    latc = grid_file.variables['latc']
-    lonc = grid_file.variables['lonc']
-    ua = grid_file.variables['ua']
-    va = grid_file.variables['va']
+            #Update the s-111 file's metadata
+            update_metadata(hdf_file, numberOfTimes, numberOfVaValues,
+                            minTime, maxTime, interval, minX, minY, maxX, maxY,
+                            minSpeed, maxSpeed)
 
-    #Verify that these arrays are the same size.
-    numberOfTimes = times.shape[0]
-    numberOfVaSeries = va.shape[0]
-    numberOfUaSeries = ua.shape[0]
-    if numberOfTimes != numberOfVaSeries or numberOfTimes != numberOfUaSeries:
-        raise Exception('The number of time values does not match the number of speed and distance values.')
-
-    #Verify that these arrays are the same size.
-    numberOfLat = latc.shape[0]
-    numberOfLon = lonc.shape[0]
-    numberOfVaValues = va.shape[1]
-    numberOfUaValues = ua.shape[1]
-    if numberOfLat != numberOfLon:
-        raise Exception('The input latitude and longitude array are different sizes.')
-    elif numberOfLat != numberOfVaValues or numberOfLat != numberOfUaValues:
-        raise Exception('The number of positions does not match the number of speed and distance values.')
-
-    #Verify that the input data is in the correct units.
-    vaUnits = va.getncattr('units')
-    uaUnits = ua.getncattr('units')
-    if vaUnits != uaUnits and vaUnits != 'metres s-1':
-        raise Exception('The input velocity data is stored in an unsupported unit.')
-
-    print("Adding irregular grid dataset")
-    print("Number of timestamps in source file:", numberOfTimes)
-    print("Number of records for each timestamp:", numberOfLat)
-
-    #Add the 'Group XY' to store the position information.
-    minX, minY, maxX, maxY = create_xy_group(hdf_file, latc, lonc)
-    
-    #Add all of the groups
-    minTime, maxTime, interval, minSpeed, maxSpeed = create_data_groups(hdf_file, times, ua, va)
-
-    #Update the s-111 file's metadata
-    update_metadata(hdf_file, numberOfTimes, numberOfVaValues,
-                    minTime, maxTime, interval, minX, minY, maxX, maxY,
-                    minSpeed, maxSpeed)
-
-    print("Dataset successfully added")
-
-    #We are done, so lets close the file.
-    hdf_file.close()
-    grid_file.close()
+            print("Dataset successfully added")
 
 
 if __name__ == "__main__":

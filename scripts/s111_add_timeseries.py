@@ -253,23 +253,20 @@ def main():
     results = parser.parse_args()
     
     #open the HDF5 file.
-    hdf_file = h5py.File(results.inOutFile[0], "r+")
-    
-    #Open the direction and speed files.
-    time_file = ascii_time_series.AsciiTimeSeries(results.time_series_file)
-    print("Successfully opened time series file containing", str(time_file.number_of_records), "records.")
+    with h5py.File(results.inOutFile[0], "r+") as hdf_file:
 
-    #Add a new group for the series.
-    new_group = add_series_group(hdf_file, time_file)
+        #Open the direction and speed files.
+        time_file = ascii_time_series.AsciiTimeSeries(results.time_series_file)
+        print("Successfully opened time series file containing", str(time_file.number_of_records), "records.")
 
-    #Add the direction and speed
-    min_speed, max_speed = add_series_datasets(new_group, time_file)
+        #Add a new group for the series.
+        new_group = add_series_group(hdf_file, time_file)
 
-    #Update the min/max speed in the metadata.
-    update_current_speed(hdf_file, min_speed, max_speed)
+        #Add the direction and speed
+        min_speed, max_speed = add_series_datasets(new_group, time_file)
 
-    #We are done, so lets close the file.
-    hdf_file.close()
+        #Update the min/max speed in the metadata.
+        update_current_speed(hdf_file, min_speed, max_speed)
 
 
 if __name__ == "__main__":
