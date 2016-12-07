@@ -15,22 +15,22 @@ s111_scripts = ["scripts/" + item for item in listdir("scripts")]
         
 setup(
     name='chs_s111',
-    version='1.0.0.dev1', 
+    version='1.0.0.dev2', 
     description='CHS S-111 tools',   
     long_description=long_description,    
     url='https://github.com/caris/chs-s111',
     author='CARIS',
     author_email='github@caris.com',
-    license='MIT',
+    license='BSD 2-Clause',
     packages=find_packages(),
     scripts=s111_scripts,
     install_requires=['pytz', 'iso8601', 'numpy', 'h5py', 'netcdf4'],
     classifiers=[
-                   "Development Status :: 2 - Pre-Alpha",
+                   "Development Status :: 3 - Alpha",
                    "Environment :: Console",        
                    "Intended Audience :: Science/Research",
                    "Natural Language :: English",
                    "Operating System :: OS Independent",
-                   "License :: OSI Approved :: MIT License",
+                   "License :: OSI Approved :: BSD 2-Clause License",
                    "Programming Language :: Python :: 3"]
 )
