@@ -5,6 +5,7 @@ import argparse
 import h5py
 import numpy
 import csv
+import os
 
 def clear_metadata_value(attributes, attribute_name):
     """ Clear the specified attribute value.
@@ -27,6 +28,9 @@ def get_metadata_type(attribute_name):
 
     typeMap = dict()
         
+    """
+         Carrier Metadata
+    """
     #Integer types
     typeMap['horizDatumValue'] = numpy.int64
     typeMap['timeRecordInterval'] = numpy.int64
@@ -164,7 +168,8 @@ def create_dataset(output_file, metadata_file):
     add_metadata(f.attrs, metadata_file)
     
     #We are done... so close the file.
-    f.close()
+    if f:
+        f.close()
     
 #******************************************************************************        
 def create_command_line():

@@ -219,12 +219,11 @@ def add_series_datasets(group, time_file):
         speeds[0][row_counter] = data_values[2]
 
         #Find the min/max speed values.
-        for speed in data_values[2]:
-            if min_speed == None:
-                min_speed = max_speed = speed
-            else:
-                min_speed = min(min_speed, speed)
-                max_speed = max(max_speed, speed)
+        if min_speed == None:
+            min_speed = max_speed = data_values[2]
+        else:
+            min_speed = min(min_speed, data_values[2])
+            max_speed = max(max_speed, data_values[2])
 
     return (min_speed, max_speed)
     

@@ -13,7 +13,6 @@ class AsciiTimeSeries:
     def __init__(self, file_name):
         self.file_name = file_name
 
-        self.file_name = None
         self.ascii_file = None
         self.interval = None
         self.start_time = None

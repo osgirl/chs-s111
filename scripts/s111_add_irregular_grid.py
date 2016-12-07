@@ -289,8 +289,8 @@ def main():
         raise Exception('The number of positions does not match the number of speed and distance values.')
 
     #Verify that the input data is in the correct units.
-    vaUnits = va.attributes['units']
-    uaUnits = ua.attributes['units']
+    vaUnits = va.getncattr('units')
+    uaUnits = ua.getncattr('units')
     if vaUnits != uaUnits and vaUnits != 'metres s-1':
         raise Exception('The input velocity data is stored in an unsupported unit.')
 
