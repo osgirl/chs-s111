@@ -24,15 +24,6 @@ def create_xy_group(hdf_file, latc, lonc):
     numberOfLat = latc.shape[0]
     numberOfLon = lonc.shape[0]
 
-    #Add the 'Group XY' to store the position information.
-    groupName = 'Group XY'
-    print("Creating", groupName, "dataset.")
-    xy_group = hdf_file.create_group(groupName)
-
-    #Add the x and y datasets to the xy group.
-    x_dataset = xy_group.create_dataset('X', (1, numberOfLat), dtype=numpy.float64)
-    y_dataset = xy_group.create_dataset('Y', (1, numberOfLon), dtype=numpy.float64)       
-
     xCoordinates =  numpy.empty((1, numberOfLat), dtype=numpy.float64)
     yCoordinates = numpy.empty((1, numberOfLon), dtype=numpy.float64)
     minX = minY = maxX = maxY = None
@@ -54,8 +45,15 @@ def create_xy_group(hdf_file, latc, lonc):
         xCoordinates[0][index] = longitude
         yCoordinates[0][index] = latitude
 
-    x_dataset = xCoordinates
-    y_dataset = yCoordinates
+
+    #Add the 'Group XY' to store the position information.
+    groupName = 'Group XY'
+    print("Creating", groupName, "dataset.")
+    xy_group = hdf_file.create_group(groupName)
+
+    #Add the x and y datasets to the xy group.
+    x_dataset = xy_group.create_dataset('X', (1, numberOfLat), dtype=numpy.float64, data=xCoordinates)
+    y_dataset = xy_group.create_dataset('Y', (1, numberOfLon), dtype=numpy.float64, data=yCoordinates)       
 
     return (minX, minY, maxX, maxY)
 
@@ -74,9 +72,6 @@ def create_direction_speed(group, ua, va):
     max_speed = None
 
     numberOfVaValues = len(va)
-
-    direction_dataset = group.create_dataset('Direction', (1, numberOfVaValues), dtype=numpy.float64)
-    speed_dataset = group.create_dataset('Speed', (1, numberOfVaValues), dtype=numpy.float64)
 
     directions = numpy.empty((1, numberOfVaValues), dtype=numpy.float64)
     speeds = numpy.empty((1, numberOfVaValues), dtype=numpy.float64)
@@ -107,8 +102,9 @@ def create_direction_speed(group, ua, va):
             min_speed = min(min_speed, windSpeed)
             max_speed = max(max_speed, windSpeed)
 
-    direction_dataset = directions
-    speed_dataset = speeds
+    #Create the datasets.
+    direction_dataset = group.create_dataset('Direction', (1, numberOfVaValues), dtype=numpy.float64, data=directions)
+    speed_dataset = group.create_dataset('Speed', (1, numberOfVaValues), dtype=numpy.float64, data=speeds)
 
     return min_speed, max_speed
 
@@ -310,6 +306,9 @@ def main():
                             minSpeed, maxSpeed)
 
             print("Dataset successfully added")
+
+        #Flush any edits out.
+        hdf_file.flush()
 
 
 if __name__ == "__main__":
