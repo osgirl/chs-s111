@@ -165,8 +165,8 @@ def add_series_group(hdf_file, time_file):
 
     
             
-    #Update the area coverage information.
-    update_area_coverage(hdf_file, time_file.latitude, time_file.longitude)
+    #Update the area coverage information. (These are not set anymore, since 1.09)
+    #update_area_coverage(hdf_file, time_file.latitude, time_file.longitude)
 
     #Update the temporal information.
     update_temporal_coverage(hdf_file, time_file.start_time, time_file.end_time)

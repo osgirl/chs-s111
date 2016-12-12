@@ -217,11 +217,11 @@ def update_metadata(hdf_file, numberOfTimes, numberOfValues, minTime, maxTime, i
     strVal = maxTime.strftime("%Y%m%dT%H%M%SZ")
     hdf_file.attrs.create('dateTimeOfLastRecord', strVal.encode())
 
-    #Update the geo coverage in the metadata.
-    hdf_file.attrs.create('westBoundLongitude', minX, dtype=numpy.float64)
-    hdf_file.attrs.create('eastBoundLongitude', maxX, dtype=numpy.float64)
-    hdf_file.attrs.create('southBoundLatitude', minY, dtype=numpy.float64)
-    hdf_file.attrs.create('northBoundLatitude', maxY, dtype=numpy.float64)
+    #Update the geo coverage in the metadata. (These are not set anymore... since 1.09)
+    #hdf_file.attrs.create('westBoundLongitude', minX, dtype=numpy.float64)
+    #hdf_file.attrs.create('eastBoundLongitude', maxX, dtype=numpy.float64)
+    #hdf_file.attrs.create('southBoundLatitude', minY, dtype=numpy.float64)
+    #hdf_file.attrs.create('northBoundLatitude', maxY, dtype=numpy.float64)
 
     #Update the surface speed values.
     if 'minSurfCurrentSpeed' in hdf_file.attrs:
