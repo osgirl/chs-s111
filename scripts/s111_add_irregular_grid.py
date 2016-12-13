@@ -52,8 +52,8 @@ def create_xy_group(hdf_file, latc, lonc):
     xy_group = hdf_file.create_group(groupName)
 
     #Add the x and y datasets to the xy group.
-    x_dataset = xy_group.create_dataset('X', (1, numberOfLat), dtype=numpy.float64, data=xCoordinates)
-    y_dataset = xy_group.create_dataset('Y', (1, numberOfLon), dtype=numpy.float64, data=yCoordinates)       
+    xy_group.create_dataset('X', (1, numberOfLat), dtype=numpy.float64, data=xCoordinates)
+    xy_group.create_dataset('Y', (1, numberOfLon), dtype=numpy.float64, data=yCoordinates)       
 
     return (minX, minY, maxX, maxY)
 
