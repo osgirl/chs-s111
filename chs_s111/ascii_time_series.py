@@ -134,7 +134,7 @@ class AsciiTimeSeries:
     def read_next_row(self):
         """Read the next row of data from the time series file.
 
-        :returns: A tuple containing the date, direction, and speed.
+        :returns: A tuple containing the date, direction, and speed (in m/s).
         """
 
         #If we are done... throw an error.

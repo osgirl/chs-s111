@@ -9,6 +9,7 @@ import iso8601
 import pytz
 from chs_s111 import ascii_time_series
 
+ms2Knots = 1.943844
 
 #******************************************************************************
 def update_area_coverage(hdf_file, latitude, longitude):
@@ -219,14 +220,14 @@ def add_series_datasets(group, time_file):
         #Read the data from the ascii file and store it in the HDF5 dataset.
         data_values = time_file.read_next_row()
         directions[0][row_counter] = data_values[1]
-        speeds[0][row_counter] = data_values[2]
+        speeds[0][row_counter] = data_values[2] * ms2Knots
 
         #Find the min/max speed values.
         if min_speed == None:
-            min_speed = max_speed = data_values[2]
+            min_speed = max_speed = speeds[0][row_counter]
         else:
-            min_speed = min(min_speed, data_values[2])
-            max_speed = max(max_speed, data_values[2])
+            min_speed = min(min_speed, speeds[0][row_counter])
+            max_speed = max(max_speed, speeds[0][row_counter])
 
 
     #Create a new dataset.
