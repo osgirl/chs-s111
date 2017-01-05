@@ -60,7 +60,7 @@ class AsciiTimeSeries:
                 #17-23  7 : Latitude (Minutes up to 4 places of decimal)
                 latMin = data[16:23]
 
-                self.latitude = float(latDeg) + (float(latMin) * 0.01);
+                self.latitude = float(latDeg) + (float(latMin) / 60.0)
 
                 #24-24  1 : 'N' or 'S'
                 if data[23:24] == 'S':
@@ -71,7 +71,7 @@ class AsciiTimeSeries:
                 #30-36  7 : Longitude (Minutes up to 4 places of decimal)
                 lonMin = data[29:36]
 
-                self.longitude = float(lonDeg) + (float(lonMin) * 0.01);
+                self.longitude = float(lonDeg) + (float(lonMin) / 60.0)
 
                 #37-37  1 : 'W' or 'E'
                 if data[36:37] == 'W':
