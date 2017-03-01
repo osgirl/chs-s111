@@ -93,10 +93,10 @@ class AsciiTimeSeries:
                 timeNotInUTC = datetime(year = int(year), month = int(month), day = int(day),
                                                   hour = int(hour), minute = int(minute), second = int(seconds),  tzinfo = pytz.utc)
                                 
-                deltaToUTC = timedelta(hours = float(utcOffset))
+                self.deltaToUTC = timedelta(hours = float(utcOffset))
 
                 #Store the start time as UTC.
-                self.start_time = timeNotInUTC + deltaToUTC
+                self.start_time = timeNotInUTC + self.deltaToUTC
 
             #If this is the 3rd row, then lets decode the number of records in the file.
             elif rowIndex == 2:
@@ -153,7 +153,9 @@ class AsciiTimeSeries:
         if len(components) != 4:
             raise Exception('Record does not have the correct number of values.')
 
+        #decode the date and time, and then covert it to UTC.
         dateAndTime = datetime.strptime(components[0] + components[1], '%Y/%m/%d%H:%M')
+        dateAndTime = dateAndTime + self.deltaToUTC
         direction = float(components[2])
         speed = float(components[3])
 
