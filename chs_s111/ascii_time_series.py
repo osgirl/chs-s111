@@ -60,7 +60,7 @@ class AsciiTimeSeries:
                 #17-23  7 : Latitude (Minutes up to 4 places of decimal)
                 latMin = data[16:23]
 
-                self.latitude = float(latDeg) + (float(latMin) * 0.01);
+                self.latitude = float(latDeg) + (float(latMin) / 60.0)
 
                 #24-24  1 : 'N' or 'S'
                 if data[23:24] == 'S':
@@ -71,7 +71,7 @@ class AsciiTimeSeries:
                 #30-36  7 : Longitude (Minutes up to 4 places of decimal)
                 lonMin = data[29:36]
 
-                self.longitude = float(lonDeg) + (float(lonMin) * 0.01);
+                self.longitude = float(lonDeg) + (float(lonMin) / 60.0)
 
                 #37-37  1 : 'W' or 'E'
                 if data[36:37] == 'W':
@@ -93,10 +93,10 @@ class AsciiTimeSeries:
                 timeNotInUTC = datetime(year = int(year), month = int(month), day = int(day),
                                                   hour = int(hour), minute = int(minute), second = int(seconds),  tzinfo = pytz.utc)
                                 
-                deltaToUTC = timedelta(hours = float(utcOffset))
+                self.deltaToUTC = timedelta(hours = float(utcOffset))
 
                 #Store the start time as UTC.
-                self.start_time = timeNotInUTC + deltaToUTC
+                self.start_time = timeNotInUTC + self.deltaToUTC
 
             #If this is the 3rd row, then lets decode the number of records in the file.
             elif rowIndex == 2:
@@ -134,7 +134,7 @@ class AsciiTimeSeries:
     def read_next_row(self):
         """Read the next row of data from the time series file.
 
-        :returns: A tuple containing the date, direction, and speed.
+        :returns: A tuple containing the date, direction, and speed (in m/s).
         """
 
         #If we are done... throw an error.
@@ -149,7 +149,9 @@ class AsciiTimeSeries:
         if len(components) != 4:
             raise Exception('Record does not have the correct number of values.')
 
+        #decode the date and time, and then covert it to UTC.
         dateAndTime = datetime.strptime(components[0] + components[1], '%Y/%m/%d%H:%M')
+        dateAndTime = dateAndTime + self.deltaToUTC
         direction = float(components[2])
         speed = float(components[3])
 

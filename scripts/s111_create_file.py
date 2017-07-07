@@ -84,10 +84,12 @@ def get_metadata_type(attribute_name):
     typeMap['editionNumber'] = numpy.int64
     typeMap['updateNumber'] = numpy.int64 
     typeMap['numberOfNodes'] = numpy.int64
-    typeMap['westBoundLongitude'] = numpy.float64
-    typeMap['eastBoundLongitude'] = numpy.float64
-    typeMap['southBoundLatitude'] = numpy.float64
-    typeMap['northBoundLatitude'] = numpy.float64
+    
+    #Removed in 1.09
+    #typeMap['westBoundLongitude'] = numpy.float64
+    #typeMap['eastBoundLongitude'] = numpy.float64
+    #typeMap['southBoundLatitude'] = numpy.float64
+    #typeMap['northBoundLatitude'] = numpy.float64
 
     if attribute_name not in typeMap:
         return None
@@ -132,10 +134,6 @@ def add_metadata(attributes, metadata_file):
 
     #We have a few pieces of metadata that may have been specified... but we want to ignore
     #They are computed attributes.
-    clear_metadata_value(attributes, 'westBoundLongitude')
-    clear_metadata_value(attributes, 'eastBoundLongitude')
-    clear_metadata_value(attributes, 'southBoundLatitude')
-    clear_metadata_value(attributes, 'northBoundLatitude')
     clear_metadata_value(attributes, 'dateTimeOfFirstRecord')
     clear_metadata_value(attributes, 'dateTimeOfLastRecord')
     clear_metadata_value(attributes, 'numberOfStations')
@@ -145,6 +143,12 @@ def add_metadata(attributes, metadata_file):
     clear_metadata_value(attributes, 'minSurfCurrentSpeed')
     clear_metadata_value(attributes, 'maxSurfCurrentSpeed')
 
+    #Removed in 1.09
+    #clear_metadata_value(attributes, 'westBoundLongitude')
+    #clear_metadata_value(attributes, 'eastBoundLongitude')
+    #clear_metadata_value(attributes, 'southBoundLatitude')
+    #clear_metadata_value(attributes, 'northBoundLatitude')
+    
     #Since this is a new file, we don't have any stations yet.
     attributes.create('numberOfStations', 0, dtype=numpy.int64)
     attributes.create('numberOfTimes', 0, dtype=numpy.int64)
@@ -159,7 +163,7 @@ def create_dataset(output_file, metadata_file):
 
     #Make sure the output file has the correct extension.
     filename, file_extension = os.path.splitext(output_file)
-    output_file_with_extension = filename + ".nc"
+    output_file_with_extension = filename + ".h5"
 
     #Create the new HDF5 file.
     with h5py.File(output_file_with_extension, "w") as hdf_file:

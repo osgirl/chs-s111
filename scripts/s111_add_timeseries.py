@@ -9,6 +9,7 @@ import iso8601
 import pytz
 from chs_s111 import ascii_time_series
 
+ms2Knots = 1.943844
 
 #******************************************************************************
 def update_area_coverage(hdf_file, latitude, longitude):
@@ -123,15 +124,19 @@ def add_series_group(hdf_file, time_file):
         intervalInSeconds = time_file.interval.total_seconds()
         hdf_file.attrs.create('timeRecordInterval', intervalInSeconds, dtype=numpy.int64)
 
+        x_dataset = numpy.empty((1, 1), dtype=numpy.float64)
+        x_dataset[0][0] = time_file.longitude
+
+        y_dataset = numpy.empty((1, 1), dtype=numpy.float64)
+        y_dataset[0][0] = time_file.latitude
+
         #Add the 'Group XY' to store the position information.
         xy_group = hdf_file.create_group('Group XY')
 
         #Add the x and y datasets to the xy group.
-        x_dataset = xy_group.create_dataset('X', (1, 1), maxshape=(1, None), dtype=numpy.float64)
-        x_dataset[0][0] = time_file.longitude
-
-        y_dataset = xy_group.create_dataset('Y', (1, 1), maxshape=(1, None), dtype=numpy.float64)       
-        y_dataset[0][0] = time_file.latitude
+        xy_group.create_dataset('X', (1, 1), maxshape=(1, None), dtype=numpy.float64, data=x_dataset)
+        xy_group.create_dataset('Y', (1, 1), maxshape=(1, None), dtype=numpy.float64, data=y_dataset)       
+        
 
     #Else this is not a new file, so lets verify a few things.
     else:
@@ -157,16 +162,16 @@ def add_series_group(hdf_file, time_file):
 
         x_dataset = xy_group['X']
         x_dataset.resize((1, numCurrentStations+1))
-        x_dataset[0][numCurrentStations] = time_file.longitude
+        x_dataset[(0, numCurrentStations)] = time_file.longitude
 
         y_dataset = xy_group['Y']
         y_dataset.resize((1, numCurrentStations+1))
-        y_dataset[0][numCurrentStations] = time_file.latitude
+        y_dataset[(0, numCurrentStations)] = time_file.latitude
 
     
             
-    #Update the area coverage information.
-    update_area_coverage(hdf_file, time_file.latitude, time_file.longitude)
+    #Update the area coverage information. (These are not set anymore, since 1.09)
+    #update_area_coverage(hdf_file, time_file.latitude, time_file.longitude)
 
     #Update the temporal information.
     update_temporal_coverage(hdf_file, time_file.start_time, time_file.end_time)
@@ -204,9 +209,8 @@ def add_series_datasets(group, time_file):
     min_speed = None
     max_speed = None
 
-    #Create a new dataset.
-    directions = group.create_dataset('Direction', (1, time_file.number_of_records), dtype=numpy.float64)
-    speeds = group.create_dataset('Speed', (1, time_file.number_of_records), dtype=numpy.float64)
+    directions =  numpy.empty((1, time_file.number_of_records), dtype=numpy.float64)
+    speeds = numpy.empty((1, time_file.number_of_records), dtype=numpy.float64)
 
     print("Adding direction and speed information...")
 
@@ -216,14 +220,19 @@ def add_series_datasets(group, time_file):
         #Read the data from the ascii file and store it in the HDF5 dataset.
         data_values = time_file.read_next_row()
         directions[0][row_counter] = data_values[1]
-        speeds[0][row_counter] = data_values[2]
+        speeds[0][row_counter] = data_values[2] * ms2Knots
 
         #Find the min/max speed values.
         if min_speed == None:
-            min_speed = max_speed = data_values[2]
+            min_speed = max_speed = speeds[0][row_counter]
         else:
-            min_speed = min(min_speed, data_values[2])
-            max_speed = max(max_speed, data_values[2])
+            min_speed = min(min_speed, speeds[0][row_counter])
+            max_speed = max(max_speed, speeds[0][row_counter])
+
+
+    #Create a new dataset.
+    group.create_dataset('Direction', (1, time_file.number_of_records), dtype=numpy.float64, data=directions)
+    group.create_dataset('Speed', (1, time_file.number_of_records), dtype=numpy.float64, data=speeds)
 
     return (min_speed, max_speed)
     
@@ -267,6 +276,9 @@ def main():
 
         #Update the min/max speed in the metadata.
         update_current_speed(hdf_file, min_speed, max_speed)
+
+        #Flush any edits out.
+        hdf_file.flush()
 
 
 if __name__ == "__main__":
